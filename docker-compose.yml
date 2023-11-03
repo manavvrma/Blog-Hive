@@ -1,15 +1,23 @@
 version: '3.8'
 
+networks:
+  blog_post:
+    driver: bridge
+
 services:
   posts:
     image: posts-service
     ports:
       - "4000:4000"
+    networks:
+      - blog_post
 
   comments:
     image: comments-service
     ports:
       - "4001:4001"
+    networks:
+      - blog_post
 
   event-bus:
     image: event-bus-service
@@ -18,6 +26,8 @@ services:
     depends_on:
       - posts
       - comments
+    networks:
+      - blog_post
 
   query:
     image: query-service
@@ -25,13 +35,19 @@ services:
       - "4002:4002"
     depends_on:
       - event-bus
+    networks:
+      - blog_post
 
   login:
     image: login-service
     ports:
       - "4006:4006"
+    networks:
+      - blog_post
 
   frontend:
     image: frontend-service
     ports:
       - "3000:3000"
+    networks:
+      - blog_post
