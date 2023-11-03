@@ -1,7 +1,7 @@
 const mongoose=require("mongoose")
+mongoose.set('strictQuery', false);
 
-const mongoURI =
-  "mongodb+srv://manavvrma17:7SgNmT821axpRmBU@blog.ukchd6g.mongodb.net/?retryWrites=true&w=majority";
+const mongoURI = "mongodb+srv://manavvrma17:VHrPxxX9GtxVxgOJ@cluster0.ejmuytt.mongodb.net/?retryWrites=true&w=majority";
 
 mongoose
   .connect(mongoURI, {
@@ -14,9 +14,9 @@ mongoose
   .catch((error) => {
     console.error("Error connecting to MongoDB:", error);
   });
-
-const logInSchema=new mongoose.Schema({
-    name:{
+  
+const newSchema=new mongoose.Schema({
+    email:{
         type:String,
         required:true
     },
@@ -26,6 +26,6 @@ const logInSchema=new mongoose.Schema({
     }
 })
 
-const LogInCollection=new mongoose.model('LogInCollection',logInSchema)
+const collection = mongoose.model("collection",newSchema)
 
-module.exports=LogInCollection
+module.exports = collection;

@@ -1,80 +1,67 @@
-const express = require("express");
-const path = require("path");
-const app = express();
-// const hbs = require("hbs")
-const LogInCollection = require("./mongo");
-
-app.use(express.json());
-
-app.use(express.urlencoded({ extended: false }));
-
-const tempelatePath = path.join(__dirname, "./tempelates");
-const publicPath = path.join(__dirname, "./public");
-console.log(publicPath);
-
-app.set("view engine", "hbs");
-app.set("views", tempelatePath);
-app.use(express.static(publicPath));
-
-// hbs.registerPartials(partialPath)
-
-app.get("/signup", (req, res) => {
-  res.render("signup");
-});
-app.get("/", (req, res) => {
-  res.render("login");
-});
-
-// app.get('/home', (req, res) => {
-//     res.render('home')
-// })
-
-app.post("/signup", async (req, res) => {
+const express = require("express")
+const collection = require("./mongo")
+const cors = require("cors")
+const app = express()
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(cors())
 
 
-  const data =new LogInCollection({
-    name: req.body.name,
-    password: req.body.password,
-  });
-  await data.save()
+
+app.get("/login",cors(),(req,res)=>{
+
+})
 
 
-  const checking = await LogInCollection.findOne({ name: req.body.name });
+app.post("/login",async(req,res)=>{
+    const{email,password}=req.body
 
-  try {
-    if (
-      checking.name === req.body.name &&
-      checking.password === req.body.password
-    ) {
-      res.send("user details already exists");
-    } else {
-      await LogInCollection.insertMany([data]);
+    try{
+        const check=await collection.findOne({email:email})
+
+        if(check){
+            res.json("exist")
+        }
+        else{
+            res.json("doesn't exist")
+        }
+
     }
-  } catch {
-    res.send("wrong inputs");
-  }
-
-  res.status(201).render("home", {
-    naming: req.body.name,
-  });
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    const check = await LogInCollection.findOne({ name: req.body.name });
-
-    if (check.password === req.body.password) {
-      res
-        .status(201)
-        .render("home", { naming: `${req.body.password}+${req.body.name}` });
-    } else {
-      res.send("incorrect password");
+    catch(e){
+        res.json("fail")
     }
-  } catch (e) {
-    res.send("wrong details");
-  }
-});
 
-app.listen(4002, () => {
-  console.log("port connected at 4002");
-});
+})
+
+
+
+app.post("/signup",async(req,res)=>{
+    const{email,password}=req.body
+
+    const data={
+        email:email,
+        password:password
+    }
+
+    try{
+        const check=await collection.findOne({email:email})
+
+        if(check){
+            res.json("exist")
+        }
+        else{
+            res.json("doesn't exist")
+            await collection.insertMany([data])
+        }
+
+    }
+    catch(e){
+        res.json("fail")
+    }
+
+})
+
+app.listen(4006,()=>{
+    console.log('Listening to 4006');
+})
+

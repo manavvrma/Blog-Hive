@@ -1,55 +1,54 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const cors = require("cors");
 const { randomBytes } = require("crypto");
-
-const mongoURI =
-  "mongodb+srv://manavvrma17:7SgNmT821axpRmBU@blog.ukchd6g.mongodb.net/?retryWrites=true&w=majority";
-
-mongoose
-  .connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((error) => {
-    console.error("Error connecting to MongoDB:", error);
-  });
-
-const { Comment } = require("./models/commentsdb.js");
+const cors = require("cors");
+const Comment = require("./commentsdb");
+const axios = require("axios");
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors());
 
 app.get("/posts/:id/comments", async (req, res) => {
   try {
-    const postId = req.params.id;
-    const comments = await Comment.find({ postId }).exec();
-    res.json(comments);
+    const comments = await Comment.find({ postId: req.params.id });
+    res.send(comments);
   } catch (error) {
-    console.error("Error fetching comments:", error);
-    res.status(500).json({ error: "Could not fetch comments" });
+    res.status(500).send({ error: "Error fetching comments from the database" });
   }
 });
 
 app.post("/posts/:id/comments", async (req, res) => {
-  try {
-    const commentId = randomBytes(4).toString("hex");
-    const postId = req.params.id;
-    const { content } = req.body;
+  const commentId = randomBytes(4).toString("hex");
+  const { content } = req.body;
 
-    const comment = new Comment({ postId, commentId, content });
+  const comment = new Comment({
+    commentId,
+    postId: req.params.id,
+    content,
+  });
+
+  try {
     await comment.save();
 
-    res.status(201).json(comment);
+    await axios.post("http://event-bus:4005/events", {
+      type: "CommentCreated",
+      data: {
+        commentId,
+        content,
+        postId: req.params.id,
+      },
+    });
+
+    res.status(201).send(comment);
   } catch (error) {
-    console.error("Error creating comment:", error);
-    res.status(500).json({ error: "Could not create comment" });
+    res.status(500).send({ error: "Error creating comment or sending event" });
   }
+});
+
+app.post("/events", (req, res) => {
+  console.log("Received Event", req.body.type);
+  res.send({});
 });
 
 app.listen(4001, () => {
